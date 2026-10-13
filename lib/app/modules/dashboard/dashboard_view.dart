@@ -15,6 +15,7 @@ import 'package:uni_control_hub/app/modules/dashboard/widgets/client_widget.dart
 import 'package:uni_control_hub/app/modules/dashboard/widgets/server_state_tile.dart';
 import 'package:uni_control_hub/app/data/app_data.dart';
 import 'package:uni_control_hub/app/services/client_service.dart';
+import 'package:uni_control_hub/app/services/wireless_adb_service.dart';
 import 'package:uni_control_hub/app/services/storage_service.dart';
 import 'package:uni_control_hub/app/services/synergy_service.dart';
 import 'package:window_manager/window_manager.dart';
@@ -242,6 +243,20 @@ class _ClientTitleWidget extends StatelessWidget {
                   ClientService.to.refreshClients();
                 },
                 icon: const Icon(Icons.refresh, size: 18),
+              ),
+              IconButton(
+                tooltip: 'Connect paired wireless device',
+                onPressed: () async {
+                  final count =
+                      await WirelessAdbService.connectAllDiscovered();
+                  if (count == 0) {
+                    DialogHandler.showError('No paired device found on network');
+                    return;
+                  }
+                  DialogHandler.showSuccess('Connected $count device(s)');
+                  ClientService.to.refreshClients();
+                },
+                icon: const Icon(Icons.wifi_tethering, size: 18),
               ),
             ],
           )
