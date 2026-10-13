@@ -4,6 +4,7 @@ import 'package:signals_flutter/signals_flutter.dart';
 import 'package:uni_control_hub/app/modules/setting/android_connection_mode_tile.dart';
 import 'package:uni_control_hub/app/modules/setting/lock_mouse_tile.dart';
 import 'package:uni_control_hub/app/modules/setting/uhid_port_tile.dart';
+import 'package:uni_control_hub/app/modules/setting/wireless_adb_dialog.dart';
 import 'package:uni_control_hub/app/services/app_service.dart';
 import 'package:uni_control_hub/app/data/capabilities.dart';
 import 'package:uni_control_hub/app/services/synergy_service.dart';
@@ -74,6 +75,13 @@ class SettingsView extends StatelessWidget {
               ),
               const CustomSettingsTile(
                 child: UhidPortTile(),
+              ),
+              CustomSettingsTile(
+                child: SettingsTile(
+                  title: const Text('Wireless debugging (ADB)'),
+                  leading: const Icon(Icons.qr_code_2),
+                  onPressed: (context) => WirelessAdbDialog.show(context),
+                ),
               ),
               CustomSettingsTile(
                 child: Watch(

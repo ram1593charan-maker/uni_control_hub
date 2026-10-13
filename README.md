@@ -55,6 +55,19 @@ On Arch Linux, run:
 sudo pacman -S qt5-base
 ```
 
+## Wireless Debugging (Android, no cable)
+
+1. Install [ADB platform-tools](https://developer.android.com/tools/releases/platform-tools) and make sure `adb` is on your PATH.
+2. On the Android device: **Settings → Developer options → Wireless debugging** → turn it on.
+3. In UniControlHub: **Settings → Wireless debugging (ADB)**.
+4. Tap **Pair device with QR code** on the phone and scan the QR shown in the app.
+5. The device connects automatically. It then appears in the device list.
+
+Already paired? Open the same dialog and tap **Connect paired devices**.
+No QR option? Use **Pair device with pairing code** on the phone and enter the IP:PORT and code in the dialog.
+
+Both devices must be on the same Wi-Fi network.
+
 ## Supported Platforms
 
 | Platform | Bluetooth | USB | ADB |
