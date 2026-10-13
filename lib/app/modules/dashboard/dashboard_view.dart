@@ -16,6 +16,7 @@ import 'package:uni_control_hub/app/modules/dashboard/widgets/server_state_tile.
 import 'package:uni_control_hub/app/data/app_data.dart';
 import 'package:uni_control_hub/app/services/client_service.dart';
 import 'package:uni_control_hub/app/services/wireless_adb_service.dart';
+import 'package:uni_control_hub/app/modules/setting/wireless_adb_dialog.dart';
 import 'package:uni_control_hub/app/services/storage_service.dart';
 import 'package:uni_control_hub/app/services/synergy_service.dart';
 import 'package:window_manager/window_manager.dart';
@@ -243,6 +244,11 @@ class _ClientTitleWidget extends StatelessWidget {
                   ClientService.to.refreshClients();
                 },
                 icon: const Icon(Icons.refresh, size: 18),
+              ),
+              IconButton(
+                tooltip: 'Pair tablet with QR code',
+                onPressed: () => WirelessAdbDialog.show(context),
+                icon: const Icon(Icons.qr_code_2, size: 18),
               ),
               IconButton(
                 tooltip: 'Connect paired wireless device',

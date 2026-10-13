@@ -23,8 +23,10 @@ Future<void> _initialize() async {
   // Set default window size
   await windowManager.ensureInitialized();
   WindowOptions windowOptions = const WindowOptions(
-    size: Size(500, 800),
-    minimumSize: Size(300, 600),
+    size: Size(1200, 800),
+    minimumSize: Size(960, 640),
+    center: true,
+    title: 'UniControlHub',
   );
 
   windowManager.waitUntilReadyToShow(windowOptions, () async {

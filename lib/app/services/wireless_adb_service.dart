@@ -89,12 +89,60 @@ class WirelessAdbService {
   }
 
   /// Lists ADB services currently visible on the local network.
+  ///
+  /// Uses `adb mdns services` first. Some systems (e.g. when avahi-daemon owns
+  /// UDP 5353) return nothing there, so falls back to `avahi-browse`.
   static Future<List<MdnsAdbService>> discoverServices() async {
-    final result = await Process.run('adb', ['mdns', 'services']);
-    if (result.exitCode != 0) {
-      throw Exception('adb mdns services failed: ${result.stderr}');
+    final adbServices = await _discoverWithAdb();
+    if (adbServices.isNotEmpty) return adbServices;
+    return _discoverWithAvahi();
+  }
+
+  static Future<List<MdnsAdbService>> _discoverWithAdb() async {
+    try {
+      final result = await Process.run('adb', ['mdns', 'services']);
+      if (result.exitCode != 0) return [];
+      return parseMdnsServices(result.stdout.toString());
+    } on ProcessException catch (e) {
+      logDebug('adb mdns services unavailable: $e');
+      return [];
     }
-    return parseMdnsServices(result.stdout.toString());
+  }
+
+  static Future<List<MdnsAdbService>> _discoverWithAvahi() async {
+    final services = <MdnsAdbService>[];
+    for (final type in [adbPairingServiceType, adbConnectServiceType]) {
+      try {
+        final result = await Process.run('avahi-browse', ['-rpt', type]);
+        services.addAll(parseAvahiBrowse(result.stdout.toString()));
+      } on ProcessException catch (e) {
+        logDebug('avahi-browse unavailable: $e');
+      }
+    }
+    return services;
+  }
+
+  /// Parses `avahi-browse -rpt <type>` output (parsable, resolved lines).
+  ///
+  /// Resolved line fields: `=;iface;proto;name;type;domain;host;address;port;txt`
+  static List<MdnsAdbService> parseAvahiBrowse(String output) {
+    final services = <MdnsAdbService>[];
+    for (final line in output.split('\n')) {
+      final fields = line.split(';');
+      if (fields.length < 9 || fields[0] != '=') continue;
+      if (fields[2] != 'IPv4') continue;
+      final serviceType = fields[4];
+      if (serviceType != adbPairingServiceType &&
+          serviceType != adbConnectServiceType) {
+        continue;
+      }
+      services.add(MdnsAdbService(
+        name: fields[3],
+        serviceType: serviceType,
+        address: '${fields[7]}:${fields[8]}',
+      ));
+    }
+    return services;
   }
 
   /// Runs `adb pair <address> <code>`. Returns true when paired.

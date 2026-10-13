@@ -55,4 +55,24 @@ void main() {
       expect(WirelessAdbService.parseMdnsServices(''), isEmpty);
     });
   });
+
+  group('WirelessAdbService.parseAvahiBrowse', () {
+    test('parses resolved IPv4 pairing and connect services', () {
+      const output = '+;wlp2s0;IPv4;UniHub-abc123;_adb-tls-pairing._tcp;local\n'
+          '=;wlp2s0;IPv4;UniHub-abc123;_adb-tls-pairing._tcp;local;'
+          'Android-2.local;192.168.0.103;37123;\n'
+          '=;wlp2s0;IPv6;adb-X;_adb-tls-connect._tcp;local;host.local;fe80::1;5555;\n'
+          '=;wlp2s0;IPv4;adb-RZ2Y-z1;_adb-tls-connect._tcp;local;'
+          'Android-2.local;192.168.0.103;46309;\n';
+
+      final services = WirelessAdbService.parseAvahiBrowse(output);
+
+      expect(services, hasLength(2));
+      expect(services[0].isPairing, isTrue);
+      expect(services[0].name, 'UniHub-abc123');
+      expect(services[0].address, '192.168.0.103:37123');
+      expect(services[1].isConnect, isTrue);
+      expect(services[1].address, '192.168.0.103:46309');
+    });
+  });
 }
