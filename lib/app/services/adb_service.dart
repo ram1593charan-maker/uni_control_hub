@@ -112,6 +112,16 @@ class AdbService {
     });
   }
 
+  /// Kills a UniHubServer left running from an older app version on the device.
+  Future<void> killUniHubServer(String device) async {
+    // '[U]niHubServer' keeps pkill from matching its own shell command line
+    await Process.run(
+      'adb',
+      ['-s', device, 'shell', 'pkill -f "[U]niHubServer"'],
+      runInShell: true,
+    );
+  }
+
   Future<void> killServer() async {
     try {
       logInfo("Killing Adb Server (if any)");

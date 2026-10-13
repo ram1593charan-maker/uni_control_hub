@@ -20,10 +20,13 @@ class _ClientMouseWidgetState extends State<ClientMouseWidget> {
   final GlobalKey<FormState> _formKey = GlobalKey();
 
   late Size _clientShape = widget.client.screen.getShape().toSize();
-  Size get _appShape => MediaQuery.sizeOf(context);
-  double get _scaleX => min(500, _appShape.width) / _clientShape.width;
-  double get _scaleY => min(600, _appShape.height) / _clientShape.height;
-  double get _scale => (_scaleX < _scaleY ? _scaleX : _scaleY) - 0.005;
+  // Preview box limits. Scale keeps the client's aspect ratio inside them.
+  static const double _previewMaxWidth = 480;
+  static const double _previewMaxHeight = 360;
+  double get _scale => min(
+        _previewMaxWidth / _clientShape.width,
+        _previewMaxHeight / _clientShape.height,
+      );
   Size get _scaledClientShape => Size(
         _clientShape.width * _scale,
         _clientShape.height * _scale,

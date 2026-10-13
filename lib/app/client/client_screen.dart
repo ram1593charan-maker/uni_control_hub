@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -29,27 +30,56 @@ class ClientScreen extends ScreenInterface {
   int relativeY = 0;
   int? buttonPressed;
 
-  @override
-  void mouseDown(int buttonID) {
+  // Mouse movement is batched and flushed every few ms. Each HID report
+  // carries at most 127 units per axis, larger deltas are split.
+  static const Duration _mouseFlushInterval = Duration(milliseconds: 8);
+  static const int _maxDelta = 127;
+  Timer? _mouseFlushTimer;
+  int _pendingX = 0;
+  int _pendingY = 0;
+
+  void _queueMouseMove(int dx, int dy) {
+    _pendingX += dx;
+    _pendingY += dy;
+    _mouseFlushTimer ??= Timer(_mouseFlushInterval, _flushMouseMove);
+  }
+
+  /// Sends pending movement now. Safe to call when nothing is pending.
+  void _flushMouseMove() {
+    _mouseFlushTimer?.cancel();
+    _mouseFlushTimer = null;
+    while (_pendingX != 0 || _pendingY != 0) {
+      final stepX = _clampDelta(_pendingX);
+      final stepY = _clampDelta(_pendingY);
+      _pendingX -= stepX;
+      _pendingY -= stepY;
+      _addInputReport(_mouseReport(buttonPressed ?? 0, stepX, stepY, 0));
+    }
+  }
+
+  int _clampDelta(int value) => value.clamp(-_maxDelta, _maxDelta).toInt();
+
+  Uint8List _mouseReport(int buttons, int x, int y, int wheel) {
     var reportData = Uint8List(5);
     reportData[0] = 0x02; // Report ID
-    reportData[1] = buttonID; // Button state
-    reportData[2] = 0; // X movement
-    reportData[3] = 0; // Y movement
-    reportData[4] = 0; // Wheel movement
-    _addInputReport(reportData);
+    reportData[1] = buttons; // Button state
+    reportData[2] = x; // X movement
+    reportData[3] = y; // Y movement
+    reportData[4] = wheel; // Wheel movement
+    return reportData;
+  }
+
+  @override
+  void mouseDown(int buttonID) {
+    _flushMouseMove();
+    _addInputReport(_mouseReport(buttonID, 0, 0, 0));
     buttonPressed = buttonID;
   }
 
   @override
   void mouseUp(int buttonID) {
-    var reportData = Uint8List(5);
-    reportData[0] = 0x02; // Report ID
-    reportData[1] = 0; // Button state
-    reportData[2] = 0; // X movement
-    reportData[3] = 0; // Y movement
-    reportData[4] = 0; // Wheel movement
-    _addInputReport(reportData);
+    _flushMouseMove();
+    _addInputReport(_mouseReport(0, 0, 0, 0));
     if (buttonPressed == buttonID) {
       buttonPressed = null;
     } else {
@@ -59,13 +89,7 @@ class ClientScreen extends ScreenInterface {
 
   @override
   void mouseMove(int x, int y) {
-    var reportData = Uint8List(5);
-    reportData[0] = 0x02; // Report ID
-    reportData[1] = buttonPressed ?? 0; // Button state
-    reportData[2] = x - relativeX; // X movement
-    reportData[3] = y - relativeY; // Y movement
-    reportData[4] = 0; // Wheel movement
-    _addInputReport(reportData);
+    _queueMouseMove(x - relativeX, y - relativeY);
     relativeX = x;
     relativeY = y;
     onMouseMove?.call(x, y);
@@ -73,13 +97,7 @@ class ClientScreen extends ScreenInterface {
 
   @override
   void mouseRelativeMove(int x, int y) {
-    var reportData = Uint8List(5);
-    reportData[0] = 0x02; // Report ID
-    reportData[1] = buttonPressed ?? 0; // Button state
-    reportData[2] = x; // X movement
-    reportData[3] = y; // Y movement
-    reportData[4] = 0; // Wheel movement
-    _addInputReport(reportData);
+    _queueMouseMove(x, y);
     relativeX = x;
     relativeY = y;
   }
@@ -98,13 +116,8 @@ class ClientScreen extends ScreenInterface {
       wheel = 1;
     }
 
-    var reportData = Uint8List(5);
-    reportData[0] = 0x02; // Report ID
-    reportData[1] = 0; // Button state
-    reportData[2] = 0; // X movement
-    reportData[3] = 0; // Y movement
-    reportData[4] = wheel; // Wheel movement
-    _addInputReport(reportData);
+    _flushMouseMove();
+    _addInputReport(_mouseReport(0, 0, 0, wheel));
   }
 
   @override

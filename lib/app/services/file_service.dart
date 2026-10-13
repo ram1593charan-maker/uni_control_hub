@@ -45,7 +45,7 @@ class FileService {
 
   String get assetsDirectory => _getDirectory('assets');
 
-  String uniHubAndroidServerFile = 'UniHubServer_0.1.jar';
+  String uniHubAndroidServerFile = 'UniHubServer_0.2.jar';
 
   Future<String> get uniHubAndroidServerPath {
     return _copyAndGetFile(

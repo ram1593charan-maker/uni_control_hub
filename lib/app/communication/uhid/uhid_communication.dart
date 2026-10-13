@@ -32,6 +32,8 @@ class UhidCommunication {
         logInfo("Server pushed to $device, $pushResult");
         await _adbService.setPortForwarding(_port, device);
         logInfo('Adb port forwarded: $_port');
+        // Stop any older server still running with the previous frame format
+        await _adbService.killUniHubServer(device);
         await _adbService.startUniHubServerFile(
           device: device,
           host: _localAddress,
@@ -79,6 +81,8 @@ class UhidCommunication {
     logInfo(
       'Connection from ${socket.remoteAddress.address}:${socket.remotePort}',
     );
+    // Send HID reports immediately. Nagle batching adds latency over Wi-Fi.
+    socket.setOption(SocketOption.tcpNoDelay, true);
     // Add client if not already exists
     UhidDevice uhidDevice = UhidDevice(
       socket: socket,

@@ -253,10 +253,10 @@ class _ClientTitleWidget extends StatelessWidget {
               IconButton(
                 tooltip: 'Connect paired wireless device',
                 onPressed: () async {
-                  final count =
-                      await WirelessAdbService.connectAllDiscovered();
+                  final count = await WirelessAdbService.connectAllDiscovered();
                   if (count == 0) {
-                    DialogHandler.showError('No paired device found on network');
+                    DialogHandler.showError(
+                        'No paired device found on network');
                     return;
                   }
                   DialogHandler.showSuccess('Connected $count device(s)');

@@ -71,11 +71,14 @@ class _UhidServerMessage {
 
   late List<int> bytes;
 
+  /// Frame: command(1) deviceId(1) length(2, big endian) data(length).
+  /// The server splits reads into frames, so one TCP read may hold many.
   _UhidServerMessage({
     required int command,
     int deviceId = 1,
     List<int> data = const [0],
   }) {
-    bytes = [command, deviceId, ...data];
+    final length = data.length;
+    bytes = [command, deviceId, (length >> 8) & 0xFF, length & 0xFF, ...data];
   }
 }

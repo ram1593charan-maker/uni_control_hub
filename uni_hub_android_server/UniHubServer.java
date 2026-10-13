@@ -20,7 +20,9 @@ public class UniHubServer extends Thread {
     private final static byte CMD_WRITE = 2;
     private final static byte CMD_CLOSE = 3;
     private final static byte CMD_CLOSE_ALL = 4;
-    private final static String VERSION = "0.0.1";
+    private final static String VERSION = "0.2.0";
+    // Frame header: command(1) deviceId(1) length(2, big endian), then data
+    private final static int HEADER_SIZE = 4;
 
     // Args
     private static String deviceId;
@@ -122,18 +124,35 @@ public class UniHubServer extends Thread {
     }
 
     private static void listenToServer(InputStream inputStream) throws IOException {
-        byte[] buffer = new byte[1024];
+        byte[] buffer = new byte[4096];
+        byte[] pending = new byte[0];
         int bytesRead;
         while ((bytesRead = inputStream.read(buffer)) != -1) {
-            handleCommand(buffer, bytesRead);
+            pending = concat(pending, buffer, bytesRead);
+            // Reads can hold several frames, or a partial one. Handle every complete frame.
+            int offset = 0;
+            while (pending.length - offset >= HEADER_SIZE) {
+                int length = ((pending[offset + 2] & 0xFF) << 8) | (pending[offset + 3] & 0xFF);
+                if (pending.length - offset - HEADER_SIZE < length) break;
+                int end = offset + HEADER_SIZE + length;
+                handleCommand(Arrays.copyOfRange(pending, offset, end));
+                offset = end;
+            }
+            pending = Arrays.copyOfRange(pending, offset, pending.length);
         }
         System.out.println("Connection closed");
     }
 
-    private static void handleCommand(byte[] buffer, int bytesRead) throws IOException {
-        byte command = buffer[0];
-        byte deviceId = buffer[1];
-        byte[] data = Arrays.copyOfRange(buffer, 2, bytesRead);
+    private static byte[] concat(byte[] head, byte[] tail, int tailLength) {
+        byte[] result = Arrays.copyOf(head, head.length + tailLength);
+        System.arraycopy(tail, 0, result, head.length, tailLength);
+        return result;
+    }
+
+    private static void handleCommand(byte[] frame) throws IOException {
+        byte command = frame[0];
+        byte deviceId = frame[1];
+        byte[] data = Arrays.copyOfRange(frame, HEADER_SIZE, frame.length);
         // System.out.println("Command: " + command + " DeviceID: " + deviceId + " Data: " + Arrays.toString(data));
         switch (command) {
             case CMD_OPEN:

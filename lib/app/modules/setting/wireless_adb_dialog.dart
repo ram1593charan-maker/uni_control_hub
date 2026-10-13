@@ -162,9 +162,7 @@ class _WirelessAdbDialogState extends State<WirelessAdbDialog> {
               ),
               const SizedBox(height: 8),
               OutlinedButton(
-                onPressed: _busy
-                    ? null
-                    : () => _runBusy(_pairWithCode),
+                onPressed: _busy ? null : () => _runBusy(_pairWithCode),
                 child: const Text('Pair with code'),
               ),
             ],
